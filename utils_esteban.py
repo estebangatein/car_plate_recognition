@@ -50,6 +50,46 @@ class BoundingBoxCNN(nn.Module):
         x = self.regressor(x)
         return x
     
+class BaselineData(Dataset):
+    def __init__(self, image_dir):
+        self.image_dir = image_dir
+        self.image_files = [f for f in os.listdir(image_dir) if f.endswith('.jpg')]
+
+    def __len__(self):
+        return len(self.image_files)
+
+    def __getitem__(self, idx):
+        filename = self.image_files[idx]
+        path = os.path.join(self.image_dir, filename)
+
+        # image reading
+        image = cv2.imread(path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
+
+        # bounding box from file name
+        parts = filename.split('-')
+        bbox_part = parts[2]
+        x1y1, x2y2 = bbox_part.split('_')
+        x1, y1 = map(int, x1y1.split('&'))
+        x2, y2 = map(int, x2y2.split('&'))
+
+        _, img_height, img_width = image.shape
+        
+        # normalize the bounding box
+        x1 = x1 / img_width
+        x2 = x2 / img_width
+        y1 = y1 / img_height
+        y2 = y2 / img_height
+
+        bbox = torch.tensor([x1, y1, x2, y2], dtype=torch.float32)
+
+        # decodes the plate
+        plate_raw = parts[4]
+        plate_text = decode_plate(plate_raw)
+        
+        return image, plate_text, bbox
+    
 
 class LicensePlateSeq2Seq(nn.Module):
     def __init__(self, vocab_size, embed_dim=256, hidden_dim=512, max_len=10):
