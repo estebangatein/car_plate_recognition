@@ -153,6 +153,7 @@ dmypy.json
 cython_debug/
 
 yolov5/
+model_weights/paper_based/pdlpr_model_weights.pth
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
